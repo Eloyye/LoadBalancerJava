@@ -29,7 +29,6 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
         setupDefaultContext();
         this.backendPods = new ArrayList<>();
         this.healthCheckService = healthCheckService;
-        this.healthCheckService.subscribe(this);
         this.next = 0;
     }
 

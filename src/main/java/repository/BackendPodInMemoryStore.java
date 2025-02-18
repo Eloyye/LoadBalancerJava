@@ -8,11 +8,11 @@ import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.*;
 
-public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, EventEmitter<EventSubscriber<BackendPodEvent, BackendPodEventContext, URI>, BackendPodEvent, BackendPodEventContext> {
+public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, EventEmitter<EventSubscriber<BackendPodEvent, BackendPodEventContext>, BackendPodEvent, BackendPodEventContext> {
 
     public static BackendPodInMemoryStore inMemoryStore;
     private final Map<URI, BackendPod> uriBackendPodMap;
-    private final Map<BackendPodEvent, Set<EventSubscriber<BackendPodEvent, BackendPodEventContext, URI>>> backendPodSubscribers;
+    private final Map<BackendPodEvent, Set<EventSubscriber<BackendPodEvent, BackendPodEventContext>>> backendPodSubscribers;
 
     private BackendPodInMemoryStore() {
         this.backendPodSubscribers = new HashMap<>();
@@ -85,7 +85,7 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
      * @return
      */
     @Override
-    public void subscribe(BackendPodEvent event, EventSubscriber<BackendPodEvent, BackendPodEventContext, URI> subscriber) {
+    public void subscribe(BackendPodEvent event, EventSubscriber<BackendPodEvent, BackendPodEventContext> subscriber) {
         this.backendPodSubscribers.computeIfAbsent(event, _ -> new HashSet<>()).add(subscriber);
     }
 
@@ -104,7 +104,7 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
     }
 
     @Override
-    public void unsubscribe(BackendPodEvent event, EventSubscriber<BackendPodEvent, BackendPodEventContext, URI> subscriber) {
+    public void unsubscribe(BackendPodEvent event, EventSubscriber<BackendPodEvent, BackendPodEventContext> subscriber) {
         if (!this.backendPodSubscribers.containsKey(event) || !this.backendPodSubscribers.get(event).contains(subscriber)) {
             return;
         }

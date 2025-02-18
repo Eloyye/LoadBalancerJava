@@ -8,8 +8,6 @@ package utils;
  * @param <U> Content or Context Type Parameter
  * @param <V> Id Type parameter
  */
-public interface EventSubscriber<T, U, V> {
+public interface EventSubscriber<T, U> {
     void handleEvent(T event, U content);
-
-    V getId();
 }

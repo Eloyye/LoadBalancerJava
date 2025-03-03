@@ -1,6 +1,6 @@
 package health;
 
-public enum HealthCheckStatus {
+public enum BackendPodStatus {
     ALIVE,
     UNRESPONSIVE,
     DEAD

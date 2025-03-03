@@ -2,5 +2,6 @@ package health;
 
 import java.time.ZonedDateTime;
 
-public record HealthCheckResponse<T>(T content, HealthCheckStatus healthCheckStatus, ZonedDateTime timestamp) {
+public record HealthCheckResponse<T>(T content, BackendPodStatus backendPodStatus, ZonedDateTime timestamp) {
+
 }

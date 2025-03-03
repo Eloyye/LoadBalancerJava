@@ -10,7 +10,6 @@ import utils.SuccessStatus;
 import utils.network.NETWORK;
 import utils.time.TimeProvider;
 
-import java.net.http.HttpClient;
 import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 
@@ -18,20 +17,17 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod> {
     private final ExecutorService executorService;
     private final HealthCheckConfig healthCheckConfig;
     private final BackendPodInMemoryStore podStore;
-    private final HttpClient httpClient;
     private volatile HealthCheckServiceStatus status = HealthCheckServiceStatus.RUNNING;
     private final TimeProvider timeProvider;
 
     public HealthCheckServiceMain(ExecutorService executorService,
                                   HealthCheckConfig healthCheckConfig,
                                   BackendPodInMemoryStore podStore,
-                                  HttpClient httpClient,
                                   TimeProvider timeProvider
                                   ) {
         this.executorService = executorService;
         this.healthCheckConfig = healthCheckConfig;
         this.podStore = podStore;
-        this.httpClient = httpClient;
         this.timeProvider = timeProvider;
     }
 
@@ -46,7 +42,7 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod> {
 
     private void sendAllHealthChecks() {
         // Send all health checks from podStore
-        this.podStore.getAll().stream().filter(pod -> pod.status() == HealthCheckStatus.ALIVE).forEach(this::schedulePod);
+        this.podStore.getAll().stream().filter(pod -> pod.status() == BackendPodStatus.ALIVE).forEach(this::schedulePod);
     }
 
     private void schedulePod(BackendPod pod) {
@@ -75,6 +71,10 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod> {
         this.status = HealthCheckServiceStatus.SUSPENDED;
     }
 
+    private void updatePodToStore(BackendPod pod, BackendPodStatus status) {
+        this.podStore.update(pod.updateStatus(status));
+    }
+
     /**
      * @return
      */
@@ -88,25 +88,30 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod> {
 
         //        requires timeout exception
         SuccessStatus status = BackoffServiceStandard
-                .run(() -> client.ping(pod))
+                .run(() -> client.ping(pod),
+                        executorService,
+                        this.healthCheckConfig.initialDelayMs(),
+                        this.healthCheckConfig.maxDelayMs())
                 .onRetry(() -> {
-                var newPod = new BackendPod(pod.uri(), pod.reviveAttempts() + 1, HealthCheckStatus.UNRESPONSIVE);
-                this.podStore.update(newPod);
+                    updatePodToStore(pod, BackendPodStatus.UNRESPONSIVE);
             }, this.healthCheckConfig.maxTries())
                 .onTermination(() -> {
-                var newPod = new BackendPod(pod.uri(), pod.reviveAttempts() + 1, HealthCheckStatus.DEAD);
-                this.podStore.update(newPod);
-            }).execute();
+                    updatePodToStore(pod, BackendPodStatus.DEAD);
+            })
+                .onRetryCleanup(() -> {
+                    updatePodToStore(pod, BackendPodStatus.ALIVE);
+                })
+                .execute();
 
         switch(status) {
             case SUCCESS -> {
                 return new HealthCheckResponse<String>("success",
-                        HealthCheckStatus.ALIVE,
+                        BackendPodStatus.ALIVE,
                         ZonedDateTime.now());
             }
             case FAIL -> {
                 return new HealthCheckResponse<String>("dead",
-                        HealthCheckStatus.DEAD,
+                        BackendPodStatus.DEAD,
                         ZonedDateTime.now());
             }
         }

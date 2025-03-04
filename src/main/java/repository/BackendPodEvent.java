@@ -1,7 +1,7 @@
 package repository;
 
 public enum BackendPodEvent {
-    NEW_BACKEND,
+    ADD_POD,
     REMOVE_BACKEND,
-    UPDATE_BACKEND
+    UPDATE_POD
 }

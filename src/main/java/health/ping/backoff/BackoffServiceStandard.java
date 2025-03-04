@@ -5,8 +5,9 @@ import health.ping.backoff.backoffFuncInterfaces.BackoffRetryCleanupHandler;
 import health.ping.backoff.backoffFuncInterfaces.BackoffRetryHandler;
 import health.ping.backoff.backoffFuncInterfaces.BackoffTerminationHandler;
 import utils.SuccessStatus;
-import utils.error.TimeoutRuntimeException;
+import utils.error.NetworkUnavailableException;
 
+import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 
 public class BackoffServiceStandard {
@@ -62,6 +63,13 @@ public class BackoffServiceStandard {
             return this;
         }
 
+        /**
+         *
+         * Executes the main logic function and only does retries if thrown NetworkUnavailableException
+         *
+         * @return SuccessStatus.SUCCESS if the main logic function was successful,
+         * SuccessStatus.FAIL if the main logic function failed
+         */
         public SuccessStatus execute() {
 //            TODO Execute with back off
             // main logic with exponential backoff
@@ -76,7 +84,7 @@ public class BackoffServiceStandard {
                         this.retryCleanupHandler.onRetryCleanup();
                     }
                     return SuccessStatus.SUCCESS;
-                } catch (TimeoutRuntimeException e) {
+                } catch (NetworkUnavailableException e) {
                     if (attempts == 0) {
                         this.retryHandler.onRetry();
                     }

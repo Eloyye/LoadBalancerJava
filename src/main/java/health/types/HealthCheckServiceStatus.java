@@ -1,4 +1,4 @@
-package health;
+package health.types;
 
 public enum HealthCheckServiceStatus {
     RUNNING,

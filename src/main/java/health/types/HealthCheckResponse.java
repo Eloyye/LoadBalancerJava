@@ -1,4 +1,4 @@
-package health;
+package health.types;
 
 import java.time.ZonedDateTime;
 

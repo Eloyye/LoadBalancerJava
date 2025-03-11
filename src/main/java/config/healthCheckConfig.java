@@ -14,4 +14,9 @@ public record HealthCheckConfig(
     long maxDelayMs,
     NetworkMethod networkMethod,
     Path healthCheckPath
-) {}
+) {
+    public static HealthCheckConfig fromConfigFile() {
+        // TODO: Implement fromConfigFile
+        return new HealthCheckConfig(0, Duration.ofMillis(0), 0, 0, 0, 0, NetworkMethod.HTTP, Path.of("/"));
+    }
+}

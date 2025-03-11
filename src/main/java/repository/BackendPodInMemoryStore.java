@@ -7,6 +7,7 @@ import utils.EventSubscriber;
 import java.net.URI;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, EventEmitter<EventSubscriber<BackendPodEvent, BackendPodEventContext>, BackendPodEvent, BackendPodEventContext> {
 
@@ -15,8 +16,8 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
     private final Map<BackendPodEvent, Set<EventSubscriber<BackendPodEvent, BackendPodEventContext>>> backendPodSubscribers;
 
     private BackendPodInMemoryStore() {
-        this.backendPodSubscribers = new HashMap<>();
-        this.uriBackendPodMap = new HashMap<>();
+        this.backendPodSubscribers = new ConcurrentHashMap<>();
+        this.uriBackendPodMap = new ConcurrentHashMap<>();
     }
 
     public static BackendPodInMemoryStore getStore() {
@@ -53,7 +54,7 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
     @Override
     public void add(BackendPod item) {
         this.uriBackendPodMap.put(item.uri(), item);
-        BackendPodEvent addEvent = BackendPodEvent.NEW_BACKEND;
+        BackendPodEvent addEvent = BackendPodEvent.ADD_POD;
         BackendPodEventContext context = new BackendPodEventContext(
                 addEvent,
                 ZonedDateTime.now(),
@@ -74,6 +75,19 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
         this.uriBackendPodMap.remove(id);
         this.publish(BackendPodEvent.REMOVE_BACKEND, new BackendPodEventContext(
                 BackendPodEvent.REMOVE_BACKEND,
+                ZonedDateTime.now(),
+                List.of(pod)
+        ));
+    }
+
+    /**
+     * @param item
+     */
+    @Override
+    public void update(BackendPod pod) {
+        this.uriBackendPodMap.put(pod.uri(), pod);
+        this.publish(BackendPodEvent.UPDATE_POD, new BackendPodEventContext(
+                BackendPodEvent.UPDATE_POD,
                 ZonedDateTime.now(),
                 List.of(pod)
         ));

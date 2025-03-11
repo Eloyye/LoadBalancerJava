@@ -3,6 +3,8 @@ package repository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import health.types.BackendPodStatus;
 import pods.BackendPod;
 import utils.EventSubscriber;
 
@@ -36,7 +38,7 @@ class BackendPodInMemoryStoreTest {
 
     private BackendPod createBackendPod(String address) throws URISyntaxException {
         var uri = new URI(address);
-        return new BackendPod(uri, false, 0, false);
+        return new BackendPod(uri, BackendPodStatus.ALIVE);
     }
 
     @Test
@@ -95,9 +97,9 @@ class BackendPodInMemoryStoreTest {
             var subscriber = mock(EventSubscriber.class);
             var address = "http://localhost:8080";
             var pod = createBackendPod(address);
-            this.store.subscribe(BackendPodEvent.NEW_BACKEND, subscriber);
+            this.store.subscribe(BackendPodEvent.ADD_POD, subscriber);
             this.store.add(pod);
-            verify(subscriber, times(1)).handleEvent(eq(BackendPodEvent.NEW_BACKEND), any(BackendPodEventContext.class));
+            verify(subscriber, times(1)).handleEvent(eq(BackendPodEvent.ADD_POD), any(BackendPodEventContext.class));
         } catch (URISyntaxException e) {
             fail(e);
         }
@@ -138,23 +140,23 @@ class BackendPodInMemoryStoreTest {
     @Test
     void subscribeAndPublish() {
         var subscriber = mock(EventSubscriber.class);
-        this.store.subscribe(BackendPodEvent.NEW_BACKEND, subscriber);
-        BackendPodEventContext context = new BackendPodEventContext(BackendPodEvent.NEW_BACKEND, ZonedDateTime.now(), List.of());
-        this.store.publish(BackendPodEvent.NEW_BACKEND, context);
-        verify(subscriber, times(1)).handleEvent(BackendPodEvent.NEW_BACKEND, context);
+        this.store.subscribe(BackendPodEvent.ADD_POD, subscriber);
+        BackendPodEventContext context = new BackendPodEventContext(BackendPodEvent.ADD_POD, ZonedDateTime.now(), List.of());
+        this.store.publish(BackendPodEvent.ADD_POD, context);
+        verify(subscriber, times(1)).handleEvent(BackendPodEvent.ADD_POD, context);
     }
 
     @Test
     void unsubscribe() {
         var subscriber = mock(EventSubscriber.class);
-        this.store.subscribe(BackendPodEvent.NEW_BACKEND, subscriber);
-        BackendPodEventContext context = new BackendPodEventContext(BackendPodEvent.NEW_BACKEND, ZonedDateTime.now(), List.of());
-        this.store.publish(BackendPodEvent.NEW_BACKEND, context);
-        verify(subscriber, times(1)).handleEvent(BackendPodEvent.NEW_BACKEND, context);
-        this.store.unsubscribe(BackendPodEvent.NEW_BACKEND, subscriber);
-        BackendPodEventContext newContext = new BackendPodEventContext(BackendPodEvent.NEW_BACKEND, ZonedDateTime.now(), List.of());
-        this.store.publish(BackendPodEvent.NEW_BACKEND, newContext);
+        this.store.subscribe(BackendPodEvent.ADD_POD, subscriber);
+        BackendPodEventContext context = new BackendPodEventContext(BackendPodEvent.ADD_POD, ZonedDateTime.now(), List.of());
+        this.store.publish(BackendPodEvent.ADD_POD, context);
+        verify(subscriber, times(1)).handleEvent(BackendPodEvent.ADD_POD, context);
+        this.store.unsubscribe(BackendPodEvent.ADD_POD, subscriber);
+        BackendPodEventContext newContext = new BackendPodEventContext(BackendPodEvent.ADD_POD, ZonedDateTime.now(), List.of());
+        this.store.publish(BackendPodEvent.ADD_POD, newContext);
         reset(subscriber);
-        verify(subscriber, times(0)).handleEvent(BackendPodEvent.NEW_BACKEND, newContext);
+        verify(subscriber, times(0)).handleEvent(BackendPodEvent.ADD_POD, newContext);
     }
 }

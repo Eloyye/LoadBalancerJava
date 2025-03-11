@@ -13,4 +13,5 @@ public interface Repository<T, U> {
     Collection<U> getAll();
     void add(U item);
     void remove(T id);
+    void update(U item);
 }

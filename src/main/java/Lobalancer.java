@@ -1,14 +1,17 @@
 import com.sun.net.httpserver.HttpServer;
-import health.HealthCheck;
+import config.HealthCheckConfig;
+import health.HealthCheckServiceMain;
 import health.HealthCheckService;
+import health.ping.HealthCheckPingFactory;
 import pods.BackendPod;
+import repository.BackendPodInMemoryStore;
 import server.RoundRobinLoadBalancer;
-import server.handler.RootHandler;
+import utils.network.NetworkMethod;
+import utils.time.RealTimeProvider;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.URI;
-import java.net.http.HttpClient;
 import java.util.concurrent.Executors;
 
 public class Lobalancer {
@@ -26,13 +29,21 @@ public class Lobalancer {
         int port = getPort(args);
         try {
             var executor = Executors.newVirtualThreadPerTaskExecutor();
-            HealthCheckService<BackendPod> healthService = new HealthCheck<BackendPod>(executor);
-
+            var config = HealthCheckConfig.fromConfigFile();
+            var inMemoryStore = BackendPodInMemoryStore.getStore();
+            var timeProvider = new RealTimeProvider();
+            var probeService = HealthCheckPingFactory.create(NetworkMethod.HTTP, config, executor);
+            HealthCheckService<BackendPod> healthService = new HealthCheckServiceMain(
+                    executor,
+                    config,
+                    inMemoryStore,
+                    timeProvider,
+                    probeService
+                    );
             var httpServer = HttpServer.create(new InetSocketAddress(port), 0);
             httpServer.setExecutor(executor);
             var server = new RoundRobinLoadBalancer(port, healthService, executor, httpServer);
-            var backendPod = new BackendPod(URI.create("http://127.0.0.1:8000"), false, 0, false);
-            server.register(backendPod);
+            healthService.start();
             server.start();
         } catch (IOException e) {
             throw new RuntimeException(e);

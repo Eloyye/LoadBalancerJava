@@ -2,8 +2,7 @@ package server;
 
 import com.sun.net.httpserver.HttpServer;
 import health.HealthCheckService;
-import logging.LogLevel;
-import logging.RuntimeLog;
+import health.types.BackendPodStatus;
 import pods.BackendPod;
 import server.handler.RootHandler;
 
@@ -46,12 +45,6 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
     @Override
     public void register(BackendPod backendPod) {
         this.backendPods.add(backendPod);
-        try {
-            this.healthCheckService.register(backendPod);
-        } catch (RuntimeException e) {
-            // TODO
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
@@ -60,7 +53,7 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
             throw new IllegalStateException("incorrect number of backend pods");
         }
         var nextBackendPod = this.backendPods.get(this.next);
-        while (nextBackendPod.isDead() || nextBackendPod.isMarkedForRemoval()) {
+        while (nextBackendPod.status() == BackendPodStatus.DEAD) {
 //            TODO Refactor backendpods to handle "next" logic
             this.next = (this.next + 1) % this.backendPods.size();
             nextBackendPod = this.backendPods.get(this.next);
@@ -70,7 +63,6 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
     }
 
     @Override
-    @RuntimeLog(value = "Starting Load Balancing Server...", level = LogLevel.INFO)
     public void start() {
         this.healthCheckService.start();
         this.server.start();
@@ -79,4 +71,6 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
     public int getPort() {
         return port;
     }
+
+    // handle events from memory store
 }

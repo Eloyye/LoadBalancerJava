@@ -4,7 +4,10 @@ import com.sun.net.httpserver.HttpServer;
 import health.HealthCheckService;
 import health.types.BackendPodStatus;
 import pods.BackendPod;
+import repository.BackendPodEvent;
+import repository.BackendPodEventContext;
 import server.handler.RootHandler;
+import utils.EventSubscriber;
 
 import java.io.IOException;
 import java.net.http.HttpClient;
@@ -12,17 +15,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
+public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod>, EventSubscriber<BackendPodEvent, BackendPodEventContext> {
     private final ExecutorService executor;
     private final HttpServer server;
     private final List<BackendPod> backendPods;
     private final HealthCheckService<BackendPod> healthCheckService;
-    private final int port;
     private int next;
 
-    //    Refactor to support builder pattern
-    public RoundRobinLoadBalancer(int port, HealthCheckService<BackendPod> healthCheckService, ExecutorService executor, HttpServer httpServer) throws IOException {
-        this.port = port;
+    public RoundRobinLoadBalancer(HealthCheckService<BackendPod> healthCheckService, ExecutorService executor, HttpServer httpServer) throws IOException {
         this.executor = executor;
         this.server = httpServer;
         setupDefaultContext();
@@ -68,8 +68,10 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod> {
         this.server.start();
     }
 
-    public int getPort() {
-        return port;
+    @Override
+    public void handleEvent(BackendPodEvent event, BackendPodEventContext content) {
+        // TODO: implement event handling on changes in backend pods
+        throw new UnsupportedOperationException("Unimplemented method 'handleEvent'");
     }
 
     // handle events from memory store

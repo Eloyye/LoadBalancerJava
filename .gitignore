@@ -42,3 +42,6 @@ build/
 
 ### Log files ###
 logs/
+
+### Dummy Files ###
+**/dummy/**

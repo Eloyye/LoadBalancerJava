@@ -3,9 +3,11 @@ import config.HealthCheckConfig;
 import health.HealthCheckServiceMain;
 import health.HealthCheckService;
 import health.ping.HealthCheckPingFactory;
+import picocli.CommandLine;
 import pods.BackendPod;
 import repository.BackendPodInMemoryStore;
 import server.RoundRobinLoadBalancer;
+import utils.argparse.LobalancerArguments;
 import utils.network.NetworkMethod;
 import utils.time.RealTimeProvider;
 
@@ -14,21 +16,21 @@ import java.net.InetSocketAddress;
 import java.util.concurrent.Executors;
 
 public class Lobalancer {
-    public static int getPort(String[] args) {
-        int port;
-        if (args.length < 1) {
-            port = 80;
-        } else {
-            port = Integer.parseInt(args[0]);
-        }
-        return port;
-    }
+    private static final org.slf4j.Logger logger = logging.LoggerFactory.getLogger(Lobalancer.class);
 
+    
     public static void main(String[] args) {
-        int port = getPort(args);
+        
+        logger.info("Initializing Lobalancer application");
+        var arguments = new LobalancerArguments();
+        new CommandLine(arguments).parseArgs(args);
+        // ensure that config file is provided
+        if (arguments.getConfigFilePath() == null) {
+            logger.warn("No config file provided: using default settings");
+        }
         try {
             var executor = Executors.newVirtualThreadPerTaskExecutor();
-            var config = HealthCheckConfig.fromConfigFile();
+            var config = HealthCheckConfig.fromConfigFile(arguments.getConfigFilePath());
             var inMemoryStore = BackendPodInMemoryStore.getStore();
             var timeProvider = new RealTimeProvider();
             var probeService = HealthCheckPingFactory.create(NetworkMethod.HTTP, config, executor);
@@ -39,9 +41,9 @@ public class Lobalancer {
                     timeProvider,
                     probeService
                     );
-            var httpServer = HttpServer.create(new InetSocketAddress(port), 0);
+            var httpServer = HttpServer.create(new InetSocketAddress(config.port()), 0);
             httpServer.setExecutor(executor);
-            var server = new RoundRobinLoadBalancer(port, healthService, executor, httpServer);
+            var server = new RoundRobinLoadBalancer(healthService, executor, httpServer);
             healthService.start();
             server.start();
         } catch (IOException e) {

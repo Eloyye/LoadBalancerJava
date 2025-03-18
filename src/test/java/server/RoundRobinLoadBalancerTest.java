@@ -50,7 +50,7 @@ public class RoundRobinLoadBalancerTest {
         when(httpServer.getAddress()).thenReturn(new InetSocketAddress("localhost", 8080));
         
         // Initialize the load balancer with mocked dependencies
-        loadBalancer = new RoundRobinLoadBalancer(8080, healthCheckService, executorService, httpServer);
+        loadBalancer = new RoundRobinLoadBalancer(healthCheckService, executorService, httpServer);
         
         // Verify that the server context was created during initialization
         verify(httpServer).createContext(eq("/"), any(RootHandler.class));
@@ -204,12 +204,6 @@ public class RoundRobinLoadBalancerTest {
     }
 
     @Test
-    public void testGetPort() {
-        // Assert
-        assertEquals(8080, loadBalancer.getPort());
-    }
-
-    @Test
     public void testConcurrentNext() throws Exception {
         // Arrange
         BackendPod pod1 = new BackendPod(POD1_URI, BackendPodStatus.ALIVE);
@@ -222,7 +216,7 @@ public class RoundRobinLoadBalancerTest {
         HttpServer realServer = HttpServer.create(new InetSocketAddress(0), 0);
         ExecutorService realExecutor = Executors.newFixedThreadPool(10);
         RoundRobinLoadBalancer realLoadBalancer = new RoundRobinLoadBalancer(
-                0, mock(HealthCheckService.class), realExecutor, realServer);
+                mock(HealthCheckService.class), realExecutor, realServer);
         
         realLoadBalancer.register(pod1);
         realLoadBalancer.register(pod2);

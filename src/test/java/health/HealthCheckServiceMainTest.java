@@ -26,7 +26,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,7 +68,7 @@ public class HealthCheckServiceMainTest {
                 50, // initialDelayMs
                 200, // maxDelayMs
                 null, // networkMethod (not needed for tests)
-                null  // healthCheckPath (not needed for tests)
+                0, null  // healthCheckPath (not needed for tests)
         );
         
         // Initialize pods with different statuses

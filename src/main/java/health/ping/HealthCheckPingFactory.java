@@ -1,6 +1,6 @@
 package health.ping;
 
-import config.HealthCheckConfig;
+import config.LoadBalancerConfig;
 import pods.BackendPod;
 import utils.network.NetworkMethod;
 
@@ -8,7 +8,7 @@ import java.net.http.HttpClient;
 import java.util.concurrent.ExecutorService;
 
 public class HealthCheckPingFactory {
-    public static Probeable<BackendPod> create(NetworkMethod networkType, HealthCheckConfig healthCheckConfig, ExecutorService executorService) {
+    public static Probeable<BackendPod> create(NetworkMethod networkType, LoadBalancerConfig healthCheckConfig, ExecutorService executorService) {
         switch (networkType) {
             case NetworkMethod.HTTP -> {
                 HttpClient httpClient = HttpClient.newBuilder()

@@ -1,6 +1,6 @@
 package health;
 
-import config.HealthCheckConfig;
+import config.LoadBalancerConfig;
 import health.ping.Probeable;
 import health.types.BackendPodStatus;
 import health.types.HealthCheckResponse;
@@ -39,7 +39,7 @@ public class HealthCheckServiceMainTest {
 
     private ExecutorService executorService;
     private BackendPodInMemoryStore podStore;
-    private HealthCheckConfig healthCheckConfig;
+    private LoadBalancerConfig healthCheckConfig;
     private HealthCheckServiceMain healthCheckService;
 
     private final URI healthyPodUri = URI.create("http://healthy-pod:8080");
@@ -60,7 +60,7 @@ public class HealthCheckServiceMainTest {
         executorService = Executors.newFixedThreadPool(5);
         
         // Configure health check with reasonable test values
-        healthCheckConfig = new HealthCheckConfig(
+        healthCheckConfig = new LoadBalancerConfig(
                 100, // duration in ms
                 Duration.ofMillis(500), // timeout
                 3, // maxTries

@@ -127,11 +127,11 @@ class BackendPodInMemoryStoreTest {
         try {
             var subscriber = mock(EventSubscriber.class);
             var address = "http://localhost:8080";
-            this.store.subscribe(BackendPodEvent.REMOVE_BACKEND, subscriber);
+            this.store.subscribe(BackendPodEvent.REMOVE_POD, subscriber);
             var pod = createBackendPod(address);
             this.store.add(pod);
             this.store.remove(new URI(address));
-            verify(subscriber, times(1)).handleEvent(eq(BackendPodEvent.REMOVE_BACKEND), any(BackendPodEventContext.class));
+            verify(subscriber, times(1)).handleEvent(eq(BackendPodEvent.REMOVE_POD), any(BackendPodEventContext.class));
         } catch (URISyntaxException e) {
             fail(e);
         }

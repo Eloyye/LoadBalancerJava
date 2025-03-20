@@ -1,0 +1,35 @@
+# General Guidelines
+- Project language is Java
+- Use SLF4J for logging
+- Always add documentation when creating new functions and classes
+- Use early returns when possible
+- Follow standard best code practices
+
+# Code Style
+- Use 4 spaces for indentation
+- Use camelCase for variable names
+
+
+# Testing
+- Use JUnit 5 for testing
+- Write unit tests for all new functions and classes
+- Write integration tests for all new functions and classes
+
+# Documentation
+- Use Javadoc for documentation
+- Document all public functions and classes
+
+# Version Control
+- Use Git for version control
+- Use semantic versioning
+
+# Project Structure
+- Use Maven for project management
+- Use src/main/java for source code
+- Use src/test/java for test code
+- Use src/main/resources for resources
+- Use src/test/resources for test resources
+
+# Build
+- Use Maven for building
+- Use Maven for running

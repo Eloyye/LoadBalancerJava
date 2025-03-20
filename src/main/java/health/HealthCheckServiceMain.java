@@ -1,6 +1,6 @@
 package health;
 
-import config.HealthCheckConfig;
+import config.LoadBalancerConfig;
 import health.ping.backoff.BackoffServiceStandard;
 import health.ping.Probeable;
 import health.types.BackendPodStatus;
@@ -26,7 +26,7 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod>, E
     private static final Logger logger = LoggerFactory.getLogger(HealthCheckServiceMain.class);
     
     private final ExecutorService executorService;
-    private final HealthCheckConfig healthCheckConfig;
+    private final LoadBalancerConfig healthCheckConfig;
     private final BackendPodInMemoryStore podStore;
     private volatile HealthCheckServiceStatus status = HealthCheckServiceStatus.RUNNING;
     private final TimeProvider timeProvider;
@@ -34,7 +34,7 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod>, E
     private final Map<BackendPod, Thread> podThreads = new ConcurrentHashMap<>();
 
     public HealthCheckServiceMain(ExecutorService executorService,
-                                  HealthCheckConfig healthCheckConfig,
+                                  LoadBalancerConfig healthCheckConfig,
                                   BackendPodInMemoryStore podStore,
                                   TimeProvider timeProvider,
                                   Probeable<BackendPod> probeService

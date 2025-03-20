@@ -1,7 +1,8 @@
 package server;
 
+import java.util.Optional;
+
 public interface LoadDistributable<T> {
-    T next();
+    Optional<T> next();
     void register(T subscriber);
-    void start();
 }

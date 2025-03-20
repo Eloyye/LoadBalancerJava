@@ -73,8 +73,8 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
         }
         var pod = this.uriBackendPodMap.get(id);
         this.uriBackendPodMap.remove(id);
-        this.publish(BackendPodEvent.REMOVE_BACKEND, new BackendPodEventContext(
-                BackendPodEvent.REMOVE_BACKEND,
+        this.publish(BackendPodEvent.REMOVE_POD, new BackendPodEventContext(
+                BackendPodEvent.REMOVE_POD,
                 ZonedDateTime.now(),
                 List.of(pod)
         ));

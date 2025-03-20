@@ -1,6 +1,6 @@
 package health.ping;
 
-import config.HealthCheckConfig;
+import config.LoadBalancerConfig;
 import pods.BackendPod;
 import utils.error.NetworkUnavailableException;
 
@@ -16,7 +16,7 @@ public class HealthProbeHttp implements Probeable<BackendPod> {
     private final Path healthCheckPath;
     private final HttpClient httpClient;
 
-    public HealthProbeHttp(HealthCheckConfig healthCheckConfig, HttpClient httpClient) {
+    public HealthProbeHttp(LoadBalancerConfig healthCheckConfig, HttpClient httpClient) {
         this.timeout = healthCheckConfig.timeout();
         this.healthCheckPath = healthCheckConfig.healthCheckPath();
         this.httpClient = httpClient;

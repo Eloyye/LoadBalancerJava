@@ -11,7 +11,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 
-public record HealthCheckConfig(
+public record LoadBalancerConfig(
         int duration,
         Duration timeout,
         int maxTries,
@@ -32,13 +32,13 @@ public record HealthCheckConfig(
     private static final long DEFAULT_MAX_DELAY_MS = 30000;
     private static final NetworkMethod DEFAULT_NETWORK_METHOD = NetworkMethod.HTTP;
     private static final Path DEFAULT_HEALTH_CHECK_PATH = Path.of("/health");
-    private static final org.slf4j.Logger logger = logging.LoggerFactory.getLogger(HealthCheckConfig.class);
+    private static final org.slf4j.Logger logger = logging.LoggerFactory.getLogger(LoadBalancerConfig.class);
     private static final int DEFAULT_PORT = 8080;
 
     
-    public static HealthCheckConfig fromConfigFile(Path configFilePath) {
+    public static LoadBalancerConfig fromConfigFile(Path configFilePath) {
         // Create default config
-        HealthCheckConfig defaultConfig = new HealthCheckConfig(
+        LoadBalancerConfig defaultConfig = new LoadBalancerConfig(
                 DEFAULT_DURATION,
                 DEFAULT_TIMEOUT,
                 DEFAULT_MAX_TRIES,
@@ -62,8 +62,8 @@ public record HealthCheckConfig(
         try {
             // Parse JSON file using Gson
             Gson gson = new Gson();
-            HealthCheckConfig parsedConfig = gson.fromJson(new FileReader(configFilePath.toFile()), 
-            HealthCheckConfig.class);
+            LoadBalancerConfig parsedConfig = gson.fromJson(new FileReader(configFilePath.toFile()), 
+            LoadBalancerConfig.class);
             // If parsing succeeds, return the parsed config
             return parsedConfig;
         } catch (JsonSyntaxException e) {

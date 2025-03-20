@@ -4,7 +4,7 @@ import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import pods.BackendPod;
-import server.RoundRobinLoadBalancer;
+import server.LoadDistributable;
 import server.handler.utils.LBHttpResponse;
 
 import java.io.IOException;
@@ -18,9 +18,9 @@ import java.io.OutputStream;
 
 public class RootHandler implements HttpHandler {
     private final HttpClient httpClient;
-    private RoundRobinLoadBalancer loadBalancer;
+    private LoadDistributable<BackendPod> loadBalancer;
 
-    public RootHandler(HttpClient httpClient, RoundRobinLoadBalancer loadBalancer) {
+    public RootHandler(HttpClient httpClient, LoadDistributable<BackendPod> loadBalancer) {
         this.loadBalancer = loadBalancer;
         this.httpClient = httpClient;
     }
@@ -38,7 +38,7 @@ public class RootHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         try {
-            BackendPod nextPod = this.loadBalancer.next();
+            BackendPod nextPod = this.loadBalancer.next().orElseThrow(() -> new RuntimeException("No available pods"));
             String targetUrl = nextPod.uri() + exchange.getRequestURI().getPath();
             if (exchange.getRequestURI().getQuery() != null) {
                 targetUrl += "?" + exchange.getRequestURI().getQuery();

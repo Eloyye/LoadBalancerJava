@@ -44,6 +44,11 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod>, E
         this.podStore = podStore;
         this.timeProvider = timeProvider;
         this.probeService = probeService;
+        this.setupStore();
+    }
+
+    private void setupStore() {
+        this.podStore.subscribe(BackendPodEvent.ADD_POD, this);
     }
 
     /**
@@ -167,6 +172,9 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod>, E
         switch(status) {
             case SUCCESS -> {
                 logger.info("Health check successful for pod: {}", pod.uri());
+                if (pod.status() == BackendPodStatus.INITIALIZING) {
+                    this.podStore.makePodReady(pod);
+                }
                 return new HealthCheckResponse<String>("success",
                         BackendPodStatus.ALIVE,
                         timestamp);
@@ -192,11 +200,11 @@ public class HealthCheckServiceMain implements HealthCheckService<BackendPod>, E
     public void handleEvent(BackendPodEvent event, BackendPodEventContext content) {
         logger.debug("Handling event: {} with {} affected pods", event, content.affectedPods().size());
         switch (event) {
-            case ADD_POD, UPDATE_POD -> {
+            case ADD_POD -> {
                 logger.info("Processing {} event for {} pods", event, content.affectedPods().size());
                 content.affectedPods()
                         .stream()
-                        .filter(pod -> pod.status() == BackendPodStatus.ALIVE) // redundant but ensures correctness
+                        .filter(pod -> pod.status() == BackendPodStatus.INITIALIZING) // redundant but ensures correctness
                         .forEach(pod -> {
                             logger.debug("Scheduling health check for pod {} due to {} event", pod.uri(), event);
                             schedulePod(pod);

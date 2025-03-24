@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import pods.BackendPod;
+import repository.BackendPodInMemoryStore;
 import server.handler.RootHandler;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -38,6 +40,8 @@ public class RoundRobinLoadBalancerTest {
     private ExecutorService executorService;
 
     private RoundRobinLoadBalancer loadBalancer;
+
+    private BackendPodInMemoryStore inMemoryStore;
     
     // Test URIs
     private final URI POD1_URI = URI.create("http://127.0.0.1:8000");
@@ -50,7 +54,8 @@ public class RoundRobinLoadBalancerTest {
         when(httpServer.getAddress()).thenReturn(new InetSocketAddress("localhost", 8080));
         
         // Initialize the load balancer with mocked dependencies
-        loadBalancer = new RoundRobinLoadBalancer(healthCheckService, executorService, httpServer);
+        this.inMemoryStore = BackendPodInMemoryStore.getStore();
+        this.loadBalancer = new RoundRobinLoadBalancer(this.inMemoryStore);
         
         // Verify that the server context was created during initialization
         verify(httpServer).createContext(eq("/"), any(RootHandler.class));
@@ -146,9 +151,9 @@ public class RoundRobinLoadBalancerTest {
         
         // Act & Assert - will keep checking all pods and return the last one checked
         // This is the current behavior of the implementation, which might need reconsideration
-        BackendPod result = loadBalancer.next();
-        assertNotNull(result);
-        assertEquals(BackendPodStatus.DEAD, result.status());
+        Optional<BackendPod> result = loadBalancer.next();
+        assertTrue(result.isPresent());
+        assertEquals(BackendPodStatus.DEAD, result.get().status());
     }
 
     @Test
@@ -194,16 +199,6 @@ public class RoundRobinLoadBalancerTest {
     }
 
     @Test
-    public void testStart() {
-        // Act
-        loadBalancer.start();
-        
-        // Assert
-        verify(healthCheckService).start();
-        verify(httpServer).start();
-    }
-
-    @Test
     public void testConcurrentNext() throws Exception {
         // Arrange
         BackendPod pod1 = new BackendPod(POD1_URI, BackendPodStatus.ALIVE);
@@ -215,8 +210,7 @@ public class RoundRobinLoadBalancerTest {
         // Create a real load balancer for this test to avoid mocking synchronized behavior
         HttpServer realServer = HttpServer.create(new InetSocketAddress(0), 0);
         ExecutorService realExecutor = Executors.newFixedThreadPool(10);
-        RoundRobinLoadBalancer realLoadBalancer = new RoundRobinLoadBalancer(
-                mock(HealthCheckService.class), realExecutor, realServer);
+        RoundRobinLoadBalancer realLoadBalancer = new RoundRobinLoadBalancer(this.inMemoryStore);
         
         realLoadBalancer.register(pod1);
         realLoadBalancer.register(pod2);
@@ -229,7 +223,7 @@ public class RoundRobinLoadBalancerTest {
         for (int i = 0; i < threadCount; i++) {
             threads[i] = new Thread(() -> {
                 synchronized (results) {
-                    results.add(realLoadBalancer.next());
+                    results.add(realLoadBalancer.next().get());
                 }
             });
             threads[i].start();

@@ -9,8 +9,13 @@ import java.time.ZonedDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, EventEmitter<EventSubscriber<BackendPodEvent, BackendPodEventContext>, BackendPodEvent, BackendPodEventContext> {
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import health.types.BackendPodStatus;
+
+public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, EventEmitter<EventSubscriber<BackendPodEvent, BackendPodEventContext>, BackendPodEvent, BackendPodEventContext> {
+    private static final Logger logger = LoggerFactory.getLogger(BackendPodInMemoryStore.class);
     public static BackendPodInMemoryStore inMemoryStore;
     private final Map<URI, BackendPod> uriBackendPodMap;
     private final Map<BackendPodEvent, Set<EventSubscriber<BackendPodEvent, BackendPodEventContext>>> backendPodSubscribers;
@@ -85,12 +90,18 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
      */
     @Override
     public void update(BackendPod pod) {
+        if (pod.status() == BackendPodStatus.DEAD) {
+            this.remove(pod.uri());
+            return;
+        }
         this.uriBackendPodMap.put(pod.uri(), pod);
-        this.publish(BackendPodEvent.UPDATE_POD, new BackendPodEventContext(
-                BackendPodEvent.UPDATE_POD,
+        BackendPodEvent updateEvent = BackendPodEvent.UPDATE_POD;
+        BackendPodEventContext context = new BackendPodEventContext(
+                updateEvent,
                 ZonedDateTime.now(),
                 List.of(pod)
-        ));
+        );
+        this.publish(updateEvent, context);
     }
 
     /**
@@ -109,6 +120,7 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
      */
     @Override
     public void publish(BackendPodEvent event, BackendPodEventContext content) {
+        logger.info("Publishing event: {}", event);
         if (!this.backendPodSubscribers.containsKey(event)) {
             return;
         }
@@ -123,6 +135,15 @@ public class BackendPodInMemoryStore implements Repository<URI, BackendPod>, Eve
             return;
         }
         this.backendPodSubscribers.get(event).remove(subscriber);
+    }
+
+    public void makePodReady(BackendPod pod) {
+        this.uriBackendPodMap.put(pod.uri(), pod);
+        this.publish(BackendPodEvent.POD_READY, new BackendPodEventContext(
+                BackendPodEvent.POD_READY,
+                ZonedDateTime.now(),
+                List.of(pod)
+        ));
     }
 
 }

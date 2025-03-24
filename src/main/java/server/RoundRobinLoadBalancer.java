@@ -4,10 +4,9 @@ import health.types.BackendPodStatus;
 import pods.BackendPod;
 import repository.BackendPodEvent;
 import repository.BackendPodEventContext;
+import repository.BackendPodInMemoryStore;
 import utils.EventSubscriber;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
@@ -18,14 +17,20 @@ import org.slf4j.LoggerFactory;
 
 public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod>, EventSubscriber<BackendPodEvent, BackendPodEventContext> {
     private static final Logger logger = LoggerFactory.getLogger(RoundRobinLoadBalancer.class);
-    private final ExecutorService executor;
     private final ConcurrentLinkedQueue<BackendPod> nodes;
     private final AtomicInteger size;
+    private final BackendPodInMemoryStore store;
 
-    public RoundRobinLoadBalancer(ExecutorService executor) {
-        this.executor = executor;
+    public RoundRobinLoadBalancer(BackendPodInMemoryStore store) {
+        this.store = store;
         this.nodes = new ConcurrentLinkedQueue<>();
         this.size = new AtomicInteger(0);
+        this.setupStore();
+    }
+
+    private void setupStore() {
+        this.store.subscribe(BackendPodEvent.POD_READY, this);
+        this.store.subscribe(BackendPodEvent.REMOVE_POD, this);
     }
 
     @Override
@@ -41,7 +46,7 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod>, Ev
     }
 
     @Override
-    synchronized public Optional<BackendPod> next() {
+    public Optional<BackendPod> next() {
         int currentSize = size.get();
         if (currentSize == 0) {
             return Optional.empty();
@@ -60,7 +65,7 @@ public class RoundRobinLoadBalancer implements LoadDistributable<BackendPod>, Ev
     @Override
     public void handleEvent(BackendPodEvent event, BackendPodEventContext content) {
         switch (event) {
-            case ADD_POD-> {
+            case POD_READY -> {
                 logger.debug("Processing {} event for {} pods", event, content.affectedPods().size());
                 content.affectedPods()
                         .stream()

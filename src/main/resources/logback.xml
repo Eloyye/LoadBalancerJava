@@ -26,6 +26,12 @@
         <appender-ref ref="FILE" />
     </logger>
 
+    <!-- Server package logger -->
+    <logger name="server" level="DEBUG" additivity="false">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </logger>
+
     <!-- Root logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE" />

@@ -29,16 +29,34 @@ public class LoadBalancerRegisterHandler implements HttpHandler {
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         var request = exchange.getRequestBody();
-        var json = new String(request.readAllBytes());
         try {
-            var pod = parser.fromJson(json, PodRegisterRequest.class);
-            this.inMemoryStore.add(new BackendPod(URI.create(pod.uri()), BackendPodStatus.ALIVE));
-            exchange.sendResponseHeaders(200, 0);
+            if (!exchange.getRequestMethod().equals("POST")) {
+                logger.info("Invalid request method");
+                exchange.sendResponseHeaders(405, 0);
+                return;
+            }
+    
+            var json = new String(request.readAllBytes());
+    
+            if (json.isEmpty()) {
+                logger.info("Empty JSON payload");
+                exchange.sendResponseHeaders(400, 0);
+                return;
+            }
+            
+            try {
+                var pod = parser.fromJson(json, PodRegisterRequest.class);
+                this.inMemoryStore.add(new BackendPod(URI.create(pod.uri()), BackendPodStatus.INITIALIZING));
+                logger.info("Registered pod: {}", pod.uri());
+                exchange.sendResponseHeaders(200, 0);
+            } catch (JsonSyntaxException e) {
+                logger.error("Invalid JSON payload", e);
+                exchange.sendResponseHeaders(400, 0);
+                return;
+            }
+        } finally {
+            request.close();
             exchange.close();
-        } catch (JsonSyntaxException e) {
-            logger.error("Invalid JSON payload", e);
-            exchange.sendResponseHeaders(400, 0);
-            return;
         }
     }
 }
